@@ -659,9 +659,8 @@ let lastReorderLatLng = null;
 let genericCounter = 0;
 
 // Variables para long-press
-let longPressTimer = null;
-let longPressLatLng = null;
-let isLongPress = false;
+let pressTimer = null;
+let pressLatLng = null;
 
 // ========== PARSEO DE COORDENADAS (FORMATO EMPRESARIAL) ==========
 function parseCoordenada(str) {
@@ -811,38 +810,29 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tasks.length > 0) reorderTasks();
   });
   
-  // ========== LONG-PRESS EN EL MAPA ==========
-  map.on('mousedown', function(e) {
-    longPressLatLng = e.latlng;
-    isLongPress = false;
-    longPressTimer = setTimeout(function() {
-      isLongPress = true;
-      handleLongPress(longPressLatLng);
+  // ========== LONG-PRESS EN EL MAPA (CORREGIDO) ==========
+  map.on('pointerdown', function(e) {
+    // Ignorar si el clic fue sobre un marcador (para no interferir con la selección)
+    if (e.originalEvent && e.originalEvent.target && e.originalEvent.target.closest && e.originalEvent.target.closest('.leaflet-marker-icon')) {
+      return;
+    }
+    pressLatLng = e.latlng;
+    pressTimer = setTimeout(function() {
+      if (pressLatLng) {
+        handleLongPress(pressLatLng);
+        pressLatLng = null;
+      }
     }, 1500);
   });
-  map.on('mouseup', function(e) {
-    clearTimeout(longPressTimer);
+
+  map.on('pointerup', function(e) {
+    clearTimeout(pressTimer);
+    pressLatLng = null;
   });
-  map.on('mouseleave', function(e) {
-    clearTimeout(longPressTimer);
-  });
-  // Para dispositivos táctiles
-  map.on('touchstart', function(e) {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      longPressLatLng = map.containerPointToLatLng([touch.clientX, touch.clientY]);
-      isLongPress = false;
-      longPressTimer = setTimeout(function() {
-        isLongPress = true;
-        handleLongPress(longPressLatLng);
-      }, 1500);
-    }
-  });
-  map.on('touchend', function(e) {
-    clearTimeout(longPressTimer);
-  });
-  map.on('touchmove', function(e) {
-    clearTimeout(longPressTimer);
+
+  map.on('pointermove', function(e) {
+    clearTimeout(pressTimer);
+    pressLatLng = null;
   });
   
   document.getElementById('btn-reorder').addEventListener('click', function() {

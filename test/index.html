@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 // ========== VERSIÓN (ENTORNO TEST) ==========
-const APP_VERSION = "v1.6.2-test";
+const APP_VERSION = "v1.6.3-test";
 console.log(`🚀 GIOT - TEST - Gestor Inteligente - EC SAPEM - ${APP_VERSION}`);
 
 // ========== PWA Manifest con share_target (ENTORNO TEST) ==========
@@ -270,6 +270,31 @@ header {
 .modal-header h2 span { font-size: 13px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
 .modal-close { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 0 8px; }
 .modal-close:hover { color: #ef4444; }
+
+/* Botón ojo para mostrar/ocultar completados en el mapa */
+.modal-header-actions { display: flex; align-items: center; gap: 6px; }
+.btn-eye {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+}
+.btn-eye:hover { border-color: var(--accent); color: var(--accent); }
+.btn-eye.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+}
+
 .search-container {
     padding: 8px 16px; border-bottom: 1px solid var(--border);
     flex-shrink: 0; display: flex; gap: 6px; align-items: center;
@@ -398,6 +423,7 @@ header {
     .btn-origin { bottom: 140px; left: 12px; width: 44px; height: 44px; font-size: 14px; }
     .btn-list { bottom: 80px; right: 12px; padding: 0 10px; font-size: 11px; height: 44px; }
     .compass-fixed { bottom: 216px; right: 12px; width: 44px; height: 44px; }
+    .btn-eye { width: 30px; height: 30px; font-size: 14px; }
 }
 </style>
 </head>
@@ -461,7 +487,7 @@ header {
     </button>
 
     <div id="calculating-indicator">⏳ Calculando ruta óptima...</div>
-    <div id="credits">Contacto: Jorge Guzman - 3834 602667 | <span class="version">Versión: <span id="version-display">v1.6.2-test</span></span></div>
+    <div id="credits">Contacto: Jorge Guzman - 3834 602667 | <span class="version">Versión: <span id="version-display">v1.6.3-test</span></span></div>
     
     <div id="empty-state">
       <div style="font-size:36px;">🗺️</div>
@@ -479,7 +505,10 @@ header {
     <div class="modal-content">
         <div class="modal-header">
             <h2 id="modalTitle">📋 Lista de Trabajos <span id="modalTotal">(0)</span></h2>
-            <button class="modal-close" onclick="closeTaskList()">✕</button>
+            <div class="modal-header-actions">
+                <button class="btn-eye" id="btnEye" onclick="toggleCompletados()" title="Mostrar/ocultar completadas en el mapa">👁</button>
+                <button class="modal-close" onclick="closeTaskList()">✕</button>
+            </div>
         </div>
         <div class="search-container">
             <input type="text" id="searchInput" placeholder="🔍 Buscar por OT, G1 o dirección..." oninput="filterTaskList()">
@@ -568,6 +597,8 @@ let pickOriginMode = false;
 let origenPersonalizado = null;
 let lastReorderLatLng = null;
 let genericCounter = 0;
+// Ojo: controla si se dibujan las tareas completadas en el mapa. Siempre arranca apagado.
+let mostrarCompletados = false;
 
 let pressTimer = null;
 let pressLatLng = null;
@@ -627,7 +658,6 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
           try {
             const cacheNames = await caches.keys();
             await Promise.all(cacheNames.map(name => {
-              // Borrar SOLO cachés de tiles del entorno TEST con versión vieja.
               if (name.startsWith('${SW_TILE_PREFIX}') && name !== TILE_CACHE) {
                 console.log('[SW TEST] Borrando caché vieja:', name);
                 return caches.delete(name);
@@ -776,6 +806,15 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(initGPS, 500);
   setTimeout(checkSharedFile, 800);
 });
+
+// ========== OJO: MOSTRAR/OCULTAR COMPLETADOS EN EL MAPA ==========
+function toggleCompletados() {
+  mostrarCompletados = !mostrarCompletados;
+  const btn = document.getElementById('btnEye');
+  if (btn) btn.classList.toggle('active', mostrarCompletados);
+  renderTasks();
+  showToast(mostrarCompletados ? '👁 Mostrando completadas en el mapa' : '👁 Ocultando completadas');
+}
 
 // ========== PEGAR DESDE PORTAPAPELES ==========
 async function pasteFromClipboard() {
@@ -1192,10 +1231,13 @@ function renderTasks() {
   const activas = getActiveTasks();
   if (activas.length > 0 && orden.length !== activas.length) { reorderTasks(); return; }
   tasks.forEach((t, idx) => {
+    const isCompleted = t.status === 'Completada' || t.status === 'Rechazada';
+    // OJO: si el usuario no activó el ojo, no dibujamos las completadas en el mapa.
+    if (isCompleted && !mostrarCompletados) return;
+
     const pos = orden.indexOf(idx);
     const isActive = pos !== -1;
     const isGeneric = t.isGeneric === true;
-    const isCompleted = t.status === 'Completada' || t.status === 'Rechazada';
     const color = statusColor(t.status);
     const isSelected = idx === activeTaskIndex;
     const size = isSelected ? 34 : 22;

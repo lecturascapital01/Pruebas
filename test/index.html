@@ -8,47 +8,31 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-// ========== VERSIÓN (ENTORNO TEST) ==========
-const APP_VERSION = "v1.6.3-test";
+const APP_VERSION = "v1.6.5-test";
 console.log(`🚀 GIOT - TEST - Gestor Inteligente - EC SAPEM - ${APP_VERSION}`);
 
-// ========== PWA Manifest con share_target (ENTORNO TEST) ==========
 if (window.location.protocol !== 'file:') {
   const manifest = {
     name: "GIOT - TEST - Gestor Inteligente - EC SAPEM",
     short_name: "GIOT TEST",
     description: "GIOT entorno de pruebas (no usar en producción)",
-    start_url: ".",
-    scope: ".",
-    display: "standalone",
-    background_color: "#0b0d13",
-    theme_color: "#8b5cf6",
+    start_url: ".", scope: ".", display: "standalone",
+    background_color: "#0b0d13", theme_color: "#8b5cf6",
     icons: [{
       src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%238b5cf6'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='%230b0d13' font-family='Arial'%3E⚡%3C/text%3E%3C/svg%3E",
-      sizes: "100x100",
-      type: "image/svg+xml",
-      purpose: "any"
+      sizes: "100x100", type: "image/svg+xml", purpose: "any"
     }],
     share_target: {
-      action: "./share-target",
-      method: "POST",
-      enctype: "multipart/form-data",
-      params: {
-        files: [{
-          name: "file",
-          accept: [".txt", ".csv", ".gpx", ".xlsx", ".xls", "text/plain", "text/csv", "application/gpx+xml"]
-        }]
-      }
+      action: "./share-target", method: "POST", enctype: "multipart/form-data",
+      params: { files: [{ name: "file", accept: [".txt",".csv",".gpx",".xlsx",".xls","text/plain","text/csv","application/gpx+xml"] }] }
     }
   };
   const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-  const manifestURL = URL.createObjectURL(blob);
-  document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${manifestURL}">`);
+  document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${URL.createObjectURL(blob)}">`);
 }
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
-
 :root {
   --bg: #0b0d13; --surface: #141824; --surface2: #1e2436;
   --border: rgba(255,255,255,0.08); --accent: #4fd8a4;
@@ -58,53 +42,29 @@ if (window.location.protocol !== 'file:') {
   --text: #e2e8f0; --text-muted: #94a3b8;
   --toast-bg: #1e2436;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'DM Mono', monospace; }
 body, html { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
-
 .app-container { display: flex; flex-direction: column; height: 100%; position: relative; }
-
 header {
-  background: var(--surface); padding: 6px 12px; display: flex; 
-  align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); 
-  z-index: 1100; backdrop-filter: blur(10px);
-  flex-wrap: wrap;
-  gap: 4px;
+  background: var(--surface); padding: 6px 12px; display: flex;
+  align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border);
+  z-index: 1100; backdrop-filter: blur(10px); flex-wrap: wrap; gap: 4px;
 }
 .title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; color: var(--accent); white-space: nowrap; }
-.title .beta { background: #f97316; color: #000; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-family: 'DM Mono', monospace; }
 .title .test { background: #8b5cf6; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-family: 'DM Mono', monospace; }
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-}
+.header-controls { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .header-controls select, .header-controls .btn-file, .header-controls .btn-header {
-  background: var(--surface2);
-  border: 1px solid var(--accent);
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 10px;
-  color: var(--accent);
-  cursor: pointer;
-  font-weight: 600;
-  font-family: 'DM Mono', monospace;
-  white-space: nowrap;
+  background: var(--surface2); border: 1px solid var(--accent);
+  padding: 4px 8px; border-radius: 6px; font-size: 10px; color: var(--accent);
+  cursor: pointer; font-weight: 600; font-family: 'DM Mono', monospace; white-space: nowrap;
 }
 .header-controls select option { background: var(--surface); color: var(--text); }
-.header-controls .btn-header.active {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
+.header-controls .btn-header.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 .header-controls .btn-header:hover { background: var(--accent); color: var(--bg); }
 .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
 .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-
 #map-container { flex: 1; position: relative; }
 #map { width: 100%; height: 100%; }
-
 .map-loader {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 44px; height: 44px; border: 4px solid rgba(255,255,255,0.08);
@@ -112,7 +72,6 @@ header {
   animation: spin 1s linear infinite; z-index: 850; display: block;
 }
 @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-
 #hud-panel {
   position: absolute; top: 12px; left: 12px; right: 12px; z-index: 950;
   background: rgba(20, 24, 36, 0.92); backdrop-filter: blur(14px);
@@ -121,19 +80,17 @@ header {
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 .hud-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.badge-priority { 
-  padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: bold; text-transform: uppercase; 
+.badge-priority {
+  padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: bold; text-transform: uppercase;
   background: rgba(255,255,255,0.1);
 }
 .priority-Alta { background: rgba(239,68,68,0.2); color: #ef4444; }
 .priority-Media { background: rgba(245,158,11,0.2); color: #f59e0b; }
 .priority-Baja { background: rgba(59,130,246,0.2); color: #3b82f6; }
 .priority-Sin { background: rgba(255,255,255,0.1); color: var(--text-muted); }
-
 .info-main { font-size: 15px; font-weight: bold; color: var(--text); line-height: 1.2; }
 .distance-txt { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--accent-blue); flex-shrink: 0; }
 .info-sub { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
-
 .status-badge {
   display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 9px; font-weight: bold;
   text-transform: uppercase; margin-left: 6px;
@@ -142,7 +99,6 @@ header {
 .status-EnProgreso { background: var(--status-progress); color: black; }
 .status-Completada { background: var(--status-done); color: black; }
 .status-Rechazada { background: var(--status-rejected); color: white; }
-
 .btn-actions { display: flex; gap: 6px; width: 100%; }
 .btn-ir, .btn-complete, .btn-undo {
   flex: 1; padding: 10px 5px; border: none; border-radius: 8px; font-size: 11px;
@@ -152,27 +108,16 @@ header {
 .btn-ir { background: var(--google-maps); color: white; }
 .btn-complete { background: var(--status-done); color: black; }
 .btn-undo { background: #f97316; color: white; }
-
 .btn-float {
-  position: absolute;
-  z-index: 960;
-  width: 48px;
-  height: 48px;
-  background: var(--surface2);
-  border: 2px solid rgba(255,255,255,0.15);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  cursor: pointer;
-  font-size: 18px;
+  position: absolute; z-index: 960; width: 48px; height: 48px;
+  background: var(--surface2); border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5); cursor: pointer; font-size: 18px;
   transition: all 0.2s;
 }
 .btn-float:hover { transform: scale(1.08); background: var(--surface); }
 .btn-float.active { border-color: var(--accent); background: var(--accent); color: var(--bg); }
 .btn-float:active { transform: scale(0.92); }
-
 .btn-gps-lock { bottom: 24px; right: 16px; }
 .btn-reorder { bottom: 24px; left: 16px; }
 .btn-clear { bottom: 90px; left: 16px; font-size: 20px; }
@@ -181,27 +126,6 @@ header {
 .btn-list span { background: var(--accent); color: var(--bg); border-radius: 50%; padding: 0 6px; font-size: 10px; min-width: 18px; text-align: center; }
 .btn-send-location { bottom: 156px; right: 16px; font-size: 20px; background: var(--accent); color: var(--bg); border-color: var(--accent); }
 .btn-send-location:hover { background: #3dbfe8; }
-
-.compass-fixed {
-  position: absolute;
-  bottom: 220px;
-  right: 16px;
-  z-index: 950;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(20, 24, 36, 0.92);
-  border: 2px solid rgba(255,255,255,0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  backdrop-filter: blur(10px);
-  pointer-events: none;
-  user-select: none;
-}
-.compass-fixed svg { display: block; }
-
 #credits {
   position: absolute; bottom: 0; left: 0; z-index: 1000;
   background: rgba(0, 0, 0, 0.5); padding: 2px 5px; border-radius: 0 4px 0 0;
@@ -209,28 +133,21 @@ header {
   font-size: 9px; color: #ccc; line-height: 1.2; pointer-events: none;
 }
 #credits .version { color: var(--accent); font-weight: bold; }
-
 #calculating-indicator {
   position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
   background: rgba(0,0,0,0.7); color: var(--accent); padding: 6px 16px;
   border-radius: 20px; font-size: 11px; display: none; z-index: 960;
 }
-
-.leaflet-popup-content-wrapper { 
-  background: var(--surface) !important; color: var(--text) !important; 
-  border: 1px solid var(--border); border-radius: 12px;
-}
+.leaflet-popup-content-wrapper { background: var(--surface) !important; color: var(--text) !important; border: 1px solid var(--border); border-radius: 12px; }
 .leaflet-popup-tip { background: var(--surface) !important; }
 .popup-nav-title { font-weight: bold; color: var(--accent); margin-bottom: 4px; font-size: 13px; }
 .popup-nav-text { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
-
 #empty-state {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; background: rgba(11,13,19,0.94);
   z-index: 999; padding: 30px; text-align: center;
 }
 #empty-state p { color: var(--text-muted); font-size: 12px; margin-top: 10px; line-height: 1.6; }
-
 .user-location-marker { width: 24px; height: 24px; position: relative; }
 .user-location-marker .pulse-dot {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -247,7 +164,6 @@ header {
   70% { transform: scale(2.2); opacity: 0; }
   100% { transform: scale(0.9); opacity: 0; }
 }
-
 .modal-overlay {
     display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.7); z-index: 2000;
@@ -270,31 +186,15 @@ header {
 .modal-header h2 span { font-size: 13px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
 .modal-close { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 0 8px; }
 .modal-close:hover { color: #ef4444; }
-
-/* Botón ojo para mostrar/ocultar completados en el mapa */
 .modal-header-actions { display: flex; align-items: center; gap: 6px; }
 .btn-eye {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    padding: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-muted); width: 34px; height: 34px; border-radius: 8px;
+    cursor: pointer; font-size: 16px; display: flex; align-items: center;
+    justify-content: center; transition: all 0.2s; padding: 0;
 }
 .btn-eye:hover { border-color: var(--accent); color: var(--accent); }
-.btn-eye.active {
-    background: var(--accent);
-    color: var(--bg);
-    border-color: var(--accent);
-}
-
+.btn-eye.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 .search-container {
     padding: 8px 16px; border-bottom: 1px solid var(--border);
     flex-shrink: 0; display: flex; gap: 6px; align-items: center;
@@ -306,12 +206,10 @@ header {
 }
 .search-container input:focus { border-color: var(--accent); }
 .search-container input::placeholder { color: var(--text-muted); }
-
 .task-list { flex: 1; overflow-y: auto; padding: 4px 10px; min-height: 200px; max-height: 50vh; }
 .task-list::-webkit-scrollbar { width: 4px; }
 .task-list::-webkit-scrollbar-track { background: var(--bg); }
 .task-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
-
 .task-item {
     padding: 8px 10px; margin: 4px 0; background: var(--bg);
     border-radius: 8px; border-left: 3px solid var(--status-pending);
@@ -324,27 +222,16 @@ header {
 .task-item.rechazada { border-left-color: var(--status-rejected); opacity: 0.6; }
 .task-item.en-progreso { border-left-color: var(--status-progress); }
 .task-item.generico { border-left-color: #8b5cf6; }
-
 .task-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .task-number { font-weight: bold; color: var(--accent); font-size: 13px; min-width: 24px; }
 .task-ot { font-weight: bold; color: var(--text); font-size: 12px; flex: 1; }
-.task-direccion {
-    font-size: 10px; color: var(--text-muted); padding-left: 24px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.task-info {
-    display: flex; align-items: center; gap: 10px;
-    padding-left: 24px; font-size: 10px; flex-wrap: wrap;
-}
-.task-status {
-    display: inline-flex; align-items: center; gap: 4px;
-    font-weight: bold; font-size: 9px; text-transform: uppercase;
-}
+.task-direccion { font-size: 10px; color: var(--text-muted); padding-left: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-info { display: flex; align-items: center; gap: 10px; padding-left: 24px; font-size: 10px; flex-wrap: wrap; }
+.task-status { display: inline-flex; align-items: center; gap: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; }
 .task-status.pendiente { color: var(--status-pending); }
 .task-status.enprogreso { color: var(--status-progress); }
 .task-status.completada { color: var(--status-done); }
 .task-status.rechazada { color: var(--status-rejected); }
-
 .task-distance { color: var(--accent-blue); font-weight: bold; font-size: 10px; }
 .task-btn-ir {
     background: var(--google-maps); border: none; color: white;
@@ -358,7 +245,6 @@ header {
     cursor: pointer; font-family: 'DM Mono', monospace;
 }
 .task-btn-delete:hover { opacity: 0.8; }
-
 .modal-footer {
     padding: 8px 16px 12px 16px; border-top: 1px solid var(--border);
     flex-shrink: 0; display: flex; justify-content: center; gap: 8px;
@@ -369,7 +255,6 @@ header {
     font-size: 11px; font-family: 'DM Mono', monospace;
 }
 .btn-close-list:hover { background: var(--border); color: var(--accent); }
-
 .form-group { padding: 8px 16px; }
 .form-group label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 2px; }
 .form-group input, .form-group textarea {
@@ -391,7 +276,6 @@ header {
     cursor: pointer; font-size: 12px;
 }
 .btn-copiar:hover { opacity: 0.8; }
-
 #toast-container {
   position: absolute; bottom: 210px; left: 50%;
   transform: translateX(-50%); z-index: 3000; pointer-events: none;
@@ -406,23 +290,19 @@ header {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 @media (max-width: 480px) {
     .modal-content { width: 98%; max-height: 90vh; }
     .modal-header h2 { font-size: 14px; }
     .task-item { padding: 6px 8px; }
     .task-ot { font-size: 11px; }
     .title { font-size: 12px; }
-    .header-controls select, .header-controls .btn-file, .header-controls .btn-header {
-        font-size: 9px; padding: 3px 6px;
-    }
+    .header-controls select, .header-controls .btn-file, .header-controls .btn-header { font-size: 9px; padding: 3px 6px; }
     .btn-send-location { bottom: 152px; right: 12px; width: 44px; height: 44px; font-size: 18px; }
     .btn-gps-lock { bottom: 20px; right: 12px; width: 44px; height: 44px; font-size: 16px; }
     .btn-reorder { bottom: 20px; left: 12px; width: 44px; height: 44px; font-size: 16px; }
     .btn-clear { bottom: 80px; left: 12px; width: 44px; height: 44px; font-size: 18px; }
     .btn-origin { bottom: 140px; left: 12px; width: 44px; height: 44px; font-size: 14px; }
     .btn-list { bottom: 80px; right: 12px; padding: 0 10px; font-size: 11px; height: 44px; }
-    .compass-fixed { bottom: 216px; right: 12px; width: 44px; height: 44px; }
     .btn-eye { width: 30px; height: 30px; font-size: 14px; }
 }
 </style>
@@ -448,11 +328,9 @@ header {
       <button class="btn-header" id="btn-export-csv">📤 Exportar</button>
     </div>
   </header>
-
   <div id="map-container">
     <div id="map"></div>
     <div id="map-spinner" class="map-loader"></div>
-    
     <div id="hud-panel">
       <div class="hud-header">
         <div>
@@ -466,17 +344,6 @@ header {
       <div class="info-sub" id="lbl-tipo-tarea" style="font-weight:bold;"></div>
       <div class="btn-actions" id="btn-actions-container"></div>
     </div>
-
-    <!-- Brújula fija: el mapa no rota, siempre Norte arriba. -->
-    <div class="compass-fixed" title="Norte arriba (el mapa no rota)">
-      <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
-        <circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-        <polygon points="20,5 24,22 20,19.5 16,22" fill="#ef4444"/>
-        <polygon points="20,35 24,22 20,24.5 16,22" fill="#94a3b8"/>
-        <text x="20" y="13" text-anchor="middle" font-size="7" font-family="DM Mono, monospace" font-weight="bold" fill="#4fd8a4">N</text>
-      </svg>
-    </div>
-
     <button class="btn-float btn-origin" id="btn-pick-origin" title="Elegir punto de partida en el mapa">📍</button>
     <button class="btn-float btn-send-location" id="btn-send-location" title="Enviar mi ubicación actual">📍</button>
     <button class="btn-float btn-gps-lock" onclick="centerOnUser()" title="Mi ubicación">📡</button>
@@ -485,10 +352,8 @@ header {
     <button class="btn-float btn-list" onclick="openTaskList()" id="btnOpenList">
         📋 <span id="totalCount">0</span>
     </button>
-
     <div id="calculating-indicator">⏳ Calculando ruta óptima...</div>
-    <div id="credits">Contacto: Jorge Guzman - 3834 602667 | <span class="version">Versión: <span id="version-display">v1.6.3-test</span></span></div>
-    
+    <div id="credits">Contacto: Jorge Guzman - 3834 602667 | <span class="version">Versión: <span id="version-display">v1.6.5-test</span></span></div>
     <div id="empty-state">
       <div style="font-size:36px;">🗺️</div>
       <p>Cargá tu archivo con las Órdenes de Trabajo o Lecturas.<br>Los puntos se mostrarán en el mapa con numeración.</p>
@@ -496,11 +361,9 @@ header {
       <p style="font-size:11px; margin-top:4px; color: var(--accent);">📍 Tu ubicación se muestra con un punto azul con pulso.</p>
       <p style="font-size:11px; margin-top:4px; color: var(--text-muted);">🗺️ Mapa: Mapabase Gris del IGN Argentina.</p>
     </div>
-
     <div id="toast-container"></div>
   </div>
 </div>
-
 <div id="taskListModal" class="modal-overlay" onclick="closeModalOutside(event)">
     <div class="modal-content">
         <div class="modal-header">
@@ -519,7 +382,6 @@ header {
         </div>
     </div>
 </div>
-
 <div id="addGenericModal" class="modal-overlay" onclick="closeModalOutsideGeneric(event)">
     <div class="modal-content">
         <div class="modal-header">
@@ -540,7 +402,6 @@ header {
         </div>
     </div>
 </div>
-
 <div id="searchCoordModal" class="modal-overlay" onclick="closeModalOutsideSearch(event)">
     <div class="modal-content">
         <div class="modal-header">
@@ -557,7 +418,6 @@ header {
         </div>
     </div>
 </div>
-
 <div id="coordModal" class="modal-overlay" onclick="closeModalOutsideCoord(event)">
     <div class="modal-content">
         <div class="modal-header">
@@ -575,10 +435,7 @@ header {
 </div>
 
 <script>
-// ========== CONFIGURACIÓN ==========
 const OSRM_HOST = "https://router.project-osrm.org";
-
-// ========== CLAVES DE PERSISTENCIA (AISLADAS POR ENTORNO TEST) ==========
 const KEY_FULL_STATE = 'giot_full_state_test';
 const KEY_PROGRESS   = 'giot_progress_global_test';
 const KEY_SHARED     = 'shared-files-test';
@@ -589,21 +446,16 @@ let tasks = [];
 let orden = [];
 let activeTaskIndex = -1;
 let markersGroup = null;
-let currentRouteId = "";
 let gpsReady = false;
 let modoLectura = false;
 let perfilRuteo = 'driving';
 let pickOriginMode = false;
 let origenPersonalizado = null;
 let lastReorderLatLng = null;
-let genericCounter = 0;
-// Ojo: controla si se dibujan las tareas completadas en el mapa. Siempre arranca apagado.
 let mostrarCompletados = false;
-
 let pressTimer = null;
 let pressLatLng = null;
 
-// ========== PARSEO DE COORDENADAS ==========
 function parseCoordenada(str) {
   if (!str || typeof str !== 'string') return null;
   const trimmed = str.trim();
@@ -631,8 +483,7 @@ function parseCoordenada(str) {
 function toGarminFormat(lat, lon) {
   const latDir = lat >= 0 ? 'N' : 'S';
   const lonDir = lon >= 0 ? 'E' : 'W';
-  const latAbs = Math.abs(lat);
-  const lonAbs = Math.abs(lon);
+  const latAbs = Math.abs(lat), lonAbs = Math.abs(lon);
   const latDeg = Math.floor(latAbs);
   const latMin = (latAbs - latDeg) * 60;
   const lonDeg = Math.floor(lonAbs);
@@ -642,36 +493,28 @@ function toGarminFormat(lat, lon) {
 
 document.getElementById('version-display').textContent = APP_VERSION;
 
-// ========== SERVICE WORKER (AISLADO PARA ENTORNO TEST) ==========
+// SERVICE WORKER
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   try {
     const swCode = `
-      // Entorno TEST: caché aislada, nunca toca la caché de la BETA.
       const APP_CACHE_VERSION = '${APP_VERSION}';
       const TILE_CACHE = '${SW_TILE_PREFIX}' + APP_CACHE_VERSION;
       const SHARED_CACHE = '${KEY_SHARED}';
-
       self.addEventListener('install', e => { self.skipWaiting(); });
-
       self.addEventListener('activate', e => {
         e.waitUntil((async () => {
           try {
             const cacheNames = await caches.keys();
             await Promise.all(cacheNames.map(name => {
-              if (name.startsWith('${SW_TILE_PREFIX}') && name !== TILE_CACHE) {
-                console.log('[SW TEST] Borrando caché vieja:', name);
-                return caches.delete(name);
-              }
+              if (name.startsWith('${SW_TILE_PREFIX}') && name !== TILE_CACHE) return caches.delete(name);
               return Promise.resolve(false);
             }));
-          } catch (err) { console.warn('[SW TEST] Error limpiando cachés:', err); }
+          } catch (err) {}
           await self.clients.claim();
         })());
       });
-
       self.addEventListener('fetch', e => {
         const url = new URL(e.request.url);
-
         if (e.request.method === 'POST' && url.pathname.endsWith('/share-target')) {
           e.respondWith((async () => {
             try {
@@ -680,18 +523,13 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
               if (file) {
                 const text = await file.text();
                 const cache = await caches.open(SHARED_CACHE);
-                await cache.put('/__shared_file__', new Response(text, {
-                  headers: { 'X-Filename': file.name }
-                }));
+                await cache.put('/__shared_file__', new Response(text, { headers: { 'X-Filename': file.name } }));
               }
               return Response.redirect('./?shared=1', 303);
-            } catch (err) {
-              return Response.redirect('./?shared_err=1', 303);
-            }
+            } catch (err) { return Response.redirect('./?shared_err=1', 303); }
           })());
           return;
         }
-
         if (url.hostname === 'wms.ign.gob.ar' || url.hostname === 'server.arcgisonline.com') {
           e.respondWith(
             caches.match(e.request).then(cached => {
@@ -699,9 +537,7 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
               return fetch(e.request).then(response => {
                 if (response && response.status === 200 && response.type !== 'opaque') {
                   const responseClone = response.clone();
-                  caches.open(TILE_CACHE).then(cache => {
-                    cache.put(e.request, responseClone).catch(() => {});
-                  });
+                  caches.open(TILE_CACHE).then(cache => cache.put(e.request, responseClone).catch(() => {}));
                 }
                 return response;
               }).catch(() => caches.match(e.request));
@@ -709,37 +545,29 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
           );
           return;
         }
-
         e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
       });
     `;
     const swBlob = new Blob([swCode], {type: 'application/javascript'});
-    const swURL = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swURL, {scope: '.'})
+    navigator.serviceWorker.register(URL.createObjectURL(swBlob), {scope: '.'})
       .then(reg => console.log('SW TEST registrado', reg.scope))
       .catch(err => console.warn('SW TEST no registrado:', err));
   } catch(e) { console.warn('SW TEST error:', e); }
 }
 
-// ========== INICIALIZACIÓN ==========
 document.addEventListener("DOMContentLoaded", () => {
   map = L.map('map', { zoomControl: false, center: [-28.4689, -65.7792], zoom: 15, preferCanvas: true });
-  
+
   const grisLayer = L.tileLayer(
     'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_gris@EPSG%3A3857@png/{z}/{x}/{-y}.png',
-    {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.ign.gob.ar/AreaServicios/Argenmap/Introduccion" target="_blank">IGN Argentina - Mapabase Gris</a>'
-    }
+    { maxZoom: 19, attribution: '&copy; <a href="https://www.ign.gob.ar/AreaServicios/Argenmap/Introduccion" target="_blank">IGN Argentina - Mapabase Gris</a>' }
   );
-  
   const satelliteLayer = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 19, attribution: '&copy; Esri' }
   );
-  
   grisLayer.addTo(map);
-  
+
   document.getElementById('btn-layer-street').addEventListener('click', function() {
     map.removeLayer(satelliteLayer); map.addLayer(grisLayer);
     document.getElementById('btn-layer-street').classList.add('active');
@@ -751,18 +579,18 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('btn-layer-street').classList.remove('active');
   });
   document.getElementById('btn-layer-street').classList.add('active');
-  
+
   grisLayer.on('tileload', () => document.getElementById('map-spinner').style.display = 'none');
   grisLayer.on('tileerror', () => { document.getElementById('map-spinner').style.display = 'none'; });
   satelliteLayer.on('tileload', () => document.getElementById('map-spinner').style.display = 'none');
-  
+
   markersGroup = L.layerGroup().addTo(map);
-  
+
   document.getElementById('profile-select').addEventListener('change', (e) => {
     perfilRuteo = e.target.value;
     if (tasks.length > 0) reorderTasks();
   });
-  
+
   document.getElementById('btn-pick-origin').addEventListener('click', togglePickOrigin);
   document.getElementById('btn-search-coord').addEventListener('click', openSearchCoord);
   document.getElementById('btn-add-generic').addEventListener('click', openAddGeneric);
@@ -770,7 +598,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('btn-send-location').addEventListener('click', sendCurrentLocation);
   document.getElementById('btn-clear').addEventListener('click', clearAll);
   document.getElementById('btn-paste-clipboard').addEventListener('click', pasteFromClipboard);
-  
+
   map.on('click', (e) => {
     if (!pickOriginMode) return;
     origenPersonalizado = { lat: e.latlng.lat, lon: e.latlng.lng, label: 'Punto elegido' };
@@ -780,7 +608,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('calculating-indicator').style.display = 'none';
     if (tasks.length > 0) reorderTasks();
   });
-  
+
   map.on('pointerdown', function(e) {
     if (e.originalEvent && e.originalEvent.target && e.originalEvent.target.closest && e.originalEvent.target.closest('.leaflet-marker-icon')) return;
     pressLatLng = e.latlng;
@@ -790,24 +618,23 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   map.on('pointerup', function() { clearTimeout(pressTimer); pressLatLng = null; });
   map.on('pointermove', function() { clearTimeout(pressTimer); pressLatLng = null; });
-  
+
   document.getElementById('btn-reorder').addEventListener('click', function() {
     this.style.transform = 'scale(0.85)';
     setTimeout(() => { this.style.transform = ''; }, 200);
     reorderTasks();
   });
-  
+
   window.addEventListener('beforeunload', function() {
     saveProgress();
     saveFullState();
   });
-  
+
   loadFullState();
   setTimeout(initGPS, 500);
   setTimeout(checkSharedFile, 800);
 });
 
-// ========== OJO: MOSTRAR/OCULTAR COMPLETADOS EN EL MAPA ==========
 function toggleCompletados() {
   mostrarCompletados = !mostrarCompletados;
   const btn = document.getElementById('btnEye');
@@ -816,17 +643,12 @@ function toggleCompletados() {
   showToast(mostrarCompletados ? '👁 Mostrando completadas en el mapa' : '👁 Ocultando completadas');
 }
 
-// ========== PEGAR DESDE PORTAPAPELES ==========
 async function pasteFromClipboard() {
   try {
-    if (!navigator.clipboard || !navigator.clipboard.readText) {
-      showToast('❌ Tu navegador no soporta leer el portapapeles');
-      return;
-    }
+    if (!navigator.clipboard || !navigator.clipboard.readText) { showToast('❌ Tu navegador no soporta leer el portapapeles'); return; }
     const text = await navigator.clipboard.readText();
     if (!text || text.trim() === '') { showToast('❌ El portapapeles está vacío'); return; }
-    let rawTasks = [];
-    let detectedMode = false;
+    let rawTasks = [], detectedMode = false;
     if (text.includes('Grid') && text.includes('Waypoint') && text.includes('Lat/Long')) {
       rawTasks = parseLecturasTXT(text); detectedMode = true;
     } else {
@@ -865,7 +687,6 @@ async function pasteFromClipboard() {
   }
 }
 
-// ========== VERIFICAR ARCHIVO COMPARTIDO ==========
 async function checkSharedFile() {
   const url = new URL(window.location.href);
   if (url.searchParams.has('shared_err')) {
@@ -915,7 +736,6 @@ async function checkSharedFile() {
   }
 }
 
-// ========== LIMPIAR ==========
 function clearAll() {
   if (!confirm('🧹 ¿Estás seguro de que quieres limpiar todo? Se borrarán todas las tareas y el progreso guardado.')) return;
   tasks = []; orden = []; activeTaskIndex = -1;
@@ -930,7 +750,6 @@ function clearAll() {
   showToast('🧹 Todo limpiado correctamente');
 }
 
-// ========== LONG-PRESS ==========
 function handleLongPress(latlng) {
   const coordStr = toGarminFormat(latlng.lat, latlng.lng);
   document.getElementById('coord-display').textContent = coordStr;
@@ -970,7 +789,6 @@ function addCoordAsGeneric() {
   showToast(`➕ Punto genérico G${num} agregado`);
 }
 
-// ========== ENVIAR UBICACIÓN ==========
 function sendCurrentLocation() {
   if (!userLatLng) { showToast('⏳ Esperando GPS...'); return; }
   const coordStr = toGarminFormat(userLatLng[0], userLatLng[1]);
@@ -981,7 +799,6 @@ function sendCurrentLocation() {
   } else { fallbackCopy(message); doCopy(); }
 }
 
-// ========== TOAST ==========
 function showToast(msg) {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
@@ -991,7 +808,6 @@ function showToast(msg) {
   setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3500);
 }
 
-// ========== GENÉRICOS ==========
 function getNextGenericNumber() {
   const generics = tasks.filter(t => t.isGeneric === true);
   if (generics.length === 0) return 1;
@@ -1021,7 +837,6 @@ function saveGeneric() {
   showToast(`➕ Punto genérico G${num} agregado`);
 }
 
-// ========== BUSCAR COORDENADAS ==========
 function openSearchCoord() {
   document.getElementById('searchCoordModal').classList.add('active');
   document.getElementById('search-coord-input').value = '';
@@ -1047,7 +862,6 @@ function searchAndAdd() {
   closeSearchCoord();
 }
 
-// ========== EXPORTAR ==========
 function exportCSV() {
   if (!tasks.length) { alert('No hay tareas para exportar.'); return; }
   let apellido = '';
@@ -1068,7 +882,6 @@ function exportCSV() {
   const horas = String(now.getHours()).padStart(2, '0');
   const minutos = String(now.getMinutes()).padStart(2, '0');
   const nombreArchivo = `${apellido}${dia}${mes}${anio}_${horas}_${minutos}.txt`;
-  
   const headers = ['Número','Suministro','Direccion Consumo','Titular','Tipo Orden','Motivo Orden','Estado','Punto GEO','Posee Priorid.'];
   let csv = headers.join('\t') + '\n';
   tasks.forEach(t => {
@@ -1079,7 +892,6 @@ function exportCSV() {
       geoStr, t.prioridad === 'Alta' ? 'Si' : 'No'
     ].join('\t') + '\n';
   });
-  
   const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -1088,7 +900,6 @@ function exportCSV() {
   showToast(`📤 Exportado: ${nombreArchivo}`);
 }
 
-// ========== PICK ORIGIN ==========
 function togglePickOrigin() {
   pickOriginMode = !pickOriginMode;
   document.getElementById('btn-pick-origin').classList.toggle('active', pickOriginMode);
@@ -1100,7 +911,6 @@ function togglePickOrigin() {
   } else ind.style.display = 'none';
 }
 
-// ========== GPS ==========
 function initGPS() {
   if (!navigator.geolocation) return;
   navigator.geolocation.watchPosition(
@@ -1138,7 +948,6 @@ function initGPS() {
   );
 }
 
-// ========== ORIGEN ==========
 function getOrigin() {
   if (origenPersonalizado) return { lat: origenPersonalizado.lat, lon: origenPersonalizado.lon };
   if (userLatLng) return { lat: userLatLng[0], lon: userLatLng[1] };
@@ -1150,7 +959,6 @@ function getActiveTasks() {
   return tasks.filter(t => t.status === 'Pendiente' || t.status === 'EnProgreso');
 }
 
-// ========== ALGORITMO ==========
 async function calcularOrden() {
   const activas = getActiveTasks();
   if (activas.length === 0) return [];
@@ -1205,7 +1013,6 @@ function greedyMatrix(matrix) {
   return order.slice(1).map(i => i - 1);
 }
 
-// ========== REORDENAR ==========
 async function reorderTasks() {
   const activas = getActiveTasks();
   if (activas.length === 0) {
@@ -1225,16 +1032,13 @@ async function reorderTasks() {
   ind.style.display = 'none';
 }
 
-// ========== RENDERIZAR ==========
 function renderTasks() {
   markersGroup.clearLayers();
   const activas = getActiveTasks();
   if (activas.length > 0 && orden.length !== activas.length) { reorderTasks(); return; }
   tasks.forEach((t, idx) => {
     const isCompleted = t.status === 'Completada' || t.status === 'Rechazada';
-    // OJO: si el usuario no activó el ojo, no dibujamos las completadas en el mapa.
     if (isCompleted && !mostrarCompletados) return;
-
     const pos = orden.indexOf(idx);
     const isActive = pos !== -1;
     const isGeneric = t.isGeneric === true;
@@ -1274,7 +1078,6 @@ function renderTasks() {
   updateTotalCounter();
 }
 
-// ========== PARSERS ==========
 function parseOrdenesTXT(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
   if (lines.length < 2) return [];
@@ -1454,7 +1257,6 @@ function convertGarmin(str) {
   return (isNaN(lat) || isNaN(lon)) ? null : {lat, lon};
 }
 
-// ========== ESTADO ==========
 function statusColor(s) {
   return {Pendiente:'#3b82f6', EnProgreso:'#f59e0b', Completada:'#22c55e', Rechazada:'#6b7280'}[s] || '#3b82f6';
 }
@@ -1475,23 +1277,22 @@ function navigateDirectly(lat, lon) {
   window.open(`https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${lat},${lon}&dir_action=navigate`, '_blank');
 }
 
+// FIX v1.6.5: al completar, el foco va a la #1 del orden óptimo.
 async function changeTaskStatus(newStatus) {
   if (activeTaskIndex < 0 || activeTaskIndex >= tasks.length) return;
   const t = tasks[activeTaskIndex];
   if (t.status === 'Completada' || t.status === 'Rechazada') return;
   t.status = newStatus;
   saveProgress(); saveFullState();
-  const activas = getActiveTasks();
-  if (activas.length === 0) {
+  const activasRestantes = getActiveTasks();
+  if (activasRestantes.length === 0) {
     activeTaskIndex = -1; orden = [];
     renderTasks(); updateNavigation(); updateTotalCounter(); return;
   }
-  if (activeTaskIndex === tasks.indexOf(t)) activeTaskIndex = tasks.indexOf(activas[0]);
+  // Reordenar con las activas restantes. Al terminar, orden[0] es la próxima tarea óptima.
   await reorderTasks();
-  const nuevasActivas = getActiveTasks();
-  if (!nuevasActivas.includes(tasks[activeTaskIndex])) {
-    activeTaskIndex = nuevasActivas.length > 0 ? tasks.indexOf(nuevasActivas[0]) : -1;
-  }
+  // Poner el foco en la #1 del nuevo orden (la que sugiere la cabecera).
+  if (orden.length > 0) activeTaskIndex = orden[0];
   renderTasks(); updateNavigation(); updateTotalCounter();
 }
 
@@ -1520,17 +1321,18 @@ function deleteGeneric(index) {
   if (document.getElementById('taskListModal').classList.contains('active')) renderTaskList();
 }
 
-// ========== HUD ==========
 function updateNavigation() {
   const activas = getActiveTasks();
   document.getElementById('hud-panel').style.display = tasks.length ? 'flex' : 'none';
   const actionsContainer = document.getElementById('btn-actions-container');
-  
+
+  // FIX v1.6.5: si el foco se perdió, apuntar a la #1 del orden óptimo.
   if (activeTaskIndex === -1 || activeTaskIndex >= tasks.length || !tasks[activeTaskIndex]) {
-    if (activas.length > 0) activeTaskIndex = tasks.indexOf(activas[0]);
+    if (orden.length > 0) activeTaskIndex = orden[0];
+    else if (activas.length > 0) activeTaskIndex = tasks.indexOf(activas[0]);
     else activeTaskIndex = -1;
   }
-  
+
   if (activeTaskIndex === -1) {
     document.getElementById('lbl-ot').textContent = "Sin tareas pendientes";
     document.getElementById('lbl-detalles').textContent = "";
@@ -1541,7 +1343,7 @@ function updateNavigation() {
     actionsContainer.innerHTML = '';
     return;
   }
-  
+
   const t = tasks[activeTaskIndex];
   const pos = orden.indexOf(activeTaskIndex);
   const orderNumber = pos !== -1 ? pos + 1 : '?';
@@ -1558,7 +1360,7 @@ function updateNavigation() {
   if (isGeneric && t.observaciones) tipoText += ` - ${t.observaciones}`;
   if (t.titular) tipoText += ` | ${t.titular}`;
   document.getElementById('lbl-tipo-tarea').textContent = tipoText;
-  
+
   let actionButtons = '';
   if (t.status === 'Completada' || t.status === 'Rechazada') {
     actionButtons = `<button class="btn-undo" onclick="reopenTask(activeTaskIndex)">↩ Reabrir</button>`;
@@ -1567,14 +1369,13 @@ function updateNavigation() {
                      <button class="btn-complete" onclick="changeTaskStatus('Completada')">✓ Realizado</button>`;
   }
   actionsContainer.innerHTML = actionButtons;
-  
+
   if (userLatLng && t) {
     const dist = haversine(userLatLng[0], userLatLng[1], t.lat, t.lon);
     document.getElementById('lbl-distance').textContent = dist >= 1000 ? `${(dist/1000).toFixed(2)} km` : `${Math.round(dist)} m`;
   } else document.getElementById('lbl-distance').textContent = '--';
 }
 
-// ========== PERSISTENCIA (CLAVES _test) ==========
 function saveFullState() {
   try {
     localStorage.setItem(KEY_FULL_STATE, JSON.stringify({ tasks, orden, modoLectura, perfilRuteo, origenPersonalizado, activeTaskIndex }));
@@ -1618,7 +1419,6 @@ function loadProgress() {
   } catch(e) {}
 }
 
-// ========== CARGA DE ARCHIVOS ==========
 document.getElementById('file-loader').addEventListener('change', async function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -1673,7 +1473,6 @@ document.getElementById('file-loader').addEventListener('change', async function
   else reader.readAsText(file, 'UTF-8');
 });
 
-// ========== UTILIDADES ==========
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371e3, toRad = d => d * Math.PI / 180;
   const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
@@ -1690,7 +1489,6 @@ function fitMapToFeatures() {
   if (pts.length) map.fitBounds(L.latLngBounds(pts), { padding: [50, 50], maxZoom: 17 });
 }
 
-// ========== LISTADO ==========
 function updateTotalCounter() {
   document.getElementById('totalCount').textContent = getActiveTasks().length;
   document.getElementById('modalTotal').textContent = `(${tasks.length})`;
@@ -1713,9 +1511,9 @@ function renderTaskList() {
     return;
   }
   const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-  const filtered = tasks.filter(t => 
-    t.numeroOT.toLowerCase().includes(searchTerm) || 
-    t.direccion.toLowerCase().includes(searchTerm) || 
+  const filtered = tasks.filter(t =>
+    t.numeroOT.toLowerCase().includes(searchTerm) ||
+    t.direccion.toLowerCase().includes(searchTerm) ||
     t.suministro.toLowerCase().includes(searchTerm)
   );
   if (!filtered.length) {

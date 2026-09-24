@@ -8,7 +8,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-const APP_VERSION = "v1.6.5-test";
+const APP_VERSION = "v1.6.6-test";
 console.log(`🚀 GIOT - TEST - Gestor Inteligente - EC SAPEM - ${APP_VERSION}`);
 
 if (window.location.protocol !== 'file:') {
@@ -318,6 +318,7 @@ header {
       </select>
       <button class="btn-header" id="btn-layer-street" data-layer="argenmap">🗺️ Calle</button>
       <button class="btn-header" id="btn-layer-sat" data-layer="sat">🛰️ Satélite</button>
+      <button class="btn-header active" id="btn-layer-remesas" title="Mostrar/ocultar capa de remesas y rutas">🗂️ Capa</button>
       <div class="file-input-wrapper">
         <button class="btn-file">📂 Cargar</button>
         <input type="file" id="file-loader" accept=".gpx,.txt,.csv,.xls,.xlsx">
@@ -353,7 +354,7 @@ header {
         📋 <span id="totalCount">0</span>
     </button>
     <div id="calculating-indicator">⏳ Calculando ruta óptima...</div>
-    <div id="credits">Contacto: Jorge Guzman - 3834 602667 | <span class="version">Versión: <span id="version-display">v1.6.5-test</span></span></div>
+    <div id="credits">Contacto: Jorge Guzman - 3834 602667 | <span class="version">Versión: <span id="version-display">v1.6.6-test</span></span></div>
     <div id="empty-state">
       <div style="font-size:36px;">🗺️</div>
       <p>Cargá tu archivo con las Órdenes de Trabajo o Lecturas.<br>Los puntos se mostrarán en el mapa con numeración.</p>
@@ -440,6 +441,20 @@ const KEY_FULL_STATE = 'giot_full_state_test';
 const KEY_PROGRESS   = 'giot_progress_global_test';
 const KEY_SHARED     = 'shared-files-test';
 const SW_TILE_PREFIX = 'giot-test-tiles-';
+const KML_URL = './capas/remesas.kml';
+
+// Colores por Remesa
+const REMESA_COLORS = {
+  1: '#e74c3c', // rojo
+  2: '#e67e22', // naranja
+  3: '#f1c40f', // amarillo
+  4: '#27ae60', // verde
+  5: '#3498db', // celeste
+  6: '#9b59b6', // púrpura
+  7: '#e91e63', // rosa
+  8: '#1abc9c'  // turquesa
+};
+const REMESA_COLOR_DEFAULT = '#95a5a6';
 
 let map, userLatLng = null, userMarker = null;
 let tasks = [];
@@ -455,6 +470,9 @@ let lastReorderLatLng = null;
 let mostrarCompletados = false;
 let pressTimer = null;
 let pressLatLng = null;
+let capaRemesas = null;
+let capaVisible = true;
+let capaCargada = false;
 
 function parseCoordenada(str) {
   if (!str || typeof str !== 'string') return null;
@@ -555,6 +573,116 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   } catch(e) { console.warn('SW TEST error:', e); }
 }
 
+// ====== CARGA DE LA CAPA DE REMESAS ======
+function parseKmlCoordinates(str) {
+  // KML: "lon,lat,alt lon,lat,alt ..." separadas por espacios
+  const pairs = str.trim().split(/\s+/);
+  const coords = [];
+  for (const p of pairs) {
+    const parts = p.split(',');
+    if (parts.length < 2) continue;
+    const lon = parseFloat(parts[0]);
+    const lat = parseFloat(parts[1]);
+    if (!isNaN(lat) && !isNaN(lon)) coords.push([lat, lon]);
+  }
+  return coords;
+}
+
+function detectarRemesa(nombreCarpeta) {
+  // Acepta "Remesa N", "Renesa N" (typo), "Remesa N prop", etc.
+  const m = nombreCarpeta.match(/re[mn]esa\s+(\d+)/i);
+  return m ? parseInt(m[1]) : null;
+}
+
+function procesarCarpetaKml(folderEl, remesaPadre) {
+  const nameEl = folderEl.querySelector(':scope > name');
+  const folderName = nameEl ? nameEl.textContent.trim() : '';
+  const remesaDetectada = detectarRemesa(folderName);
+  const remesaActual = remesaDetectada !== null ? remesaDetectada : remesaPadre;
+
+  // Procesar Placemarks directos de esta carpeta
+  const placemarks = folderEl.querySelectorAll(':scope > Placemark');
+  placemarks.forEach(pm => {
+    const polyEl = pm.querySelector('Polygon');
+    if (!polyEl) return; // Ignoramos Points, LineStrings, etc.
+    const coordsEl = polyEl.querySelector('outerBoundaryIs coordinates') || polyEl.querySelector('coordinates');
+    if (!coordsEl) return;
+    const coords = parseKmlCoordinates(coordsEl.textContent);
+    if (coords.length < 3) return;
+    const rutaName = pm.querySelector(':scope > name')?.textContent || '';
+    const remesa = remesaActual || 0;
+    const color = REMESA_COLORS[remesa] || REMESA_COLOR_DEFAULT;
+    const polygon = L.polygon(coords, {
+      color: color,
+      weight: 2,
+      opacity: 0.85,
+      fillColor: color,
+      fillOpacity: 0.06,
+      interactive: true
+    });
+    polygon.bindPopup(`<div class="popup-nav-title">Ruta ${rutaName}</div><div class="popup-nav-text">Remesa ${remesa || '?'}</div>`, { maxWidth: 200 });
+    capaRemesas.addLayer(polygon);
+  });
+
+  // Procesar subcarpetas recursivamente
+  const subfolders = folderEl.querySelectorAll(':scope > Folder');
+  subfolders.forEach(sf => procesarCarpetaKml(sf, remesaActual));
+}
+
+async function cargarCapaRemesas() {
+  capaRemesas = L.layerGroup();
+  try {
+    const res = await fetch(KML_URL, { cache: 'no-store' });
+    if (!res.ok) {
+      console.warn('No se pudo cargar el KML (' + res.status + ')');
+      capaCargada = false;
+      document.getElementById('btn-layer-remesas').classList.remove('active');
+      return;
+    }
+    const text = await res.text();
+    const xml = new DOMParser().parseFromString(text, 'text/xml');
+    if (xml.getElementsByTagName('parsererror').length) {
+      console.warn('KML con error de parseo');
+      capaCargada = false;
+      document.getElementById('btn-layer-remesas').classList.remove('active');
+      return;
+    }
+    const doc = xml.documentElement;
+    procesarCarpetaKml(doc, null);
+    capaCargada = true;
+    // Agregar al mapa (por debajo de los marcadores)
+    capaRemesas.addTo(map);
+    capaVisible = true;
+    document.getElementById('btn-layer-remesas').classList.add('active');
+    const n = capaRemesas.getLayers().length;
+    console.log('Capa de remesas cargada:', n, 'polígonos');
+  } catch (e) {
+    console.warn('Error cargando capa de remesas:', e);
+    capaCargada = false;
+    document.getElementById('btn-layer-remesas').classList.remove('active');
+  }
+}
+
+function toggleCapaRemesas() {
+  const btn = document.getElementById('btn-layer-remesas');
+  if (!capaCargada) {
+    showToast('⚠️ La capa no se pudo cargar. Verificá capas/remesas.kml');
+    return;
+  }
+  if (capaVisible) {
+    map.removeLayer(capaRemesas);
+    capaVisible = false;
+    btn.classList.remove('active');
+    showToast('🗂️ Capa de remesas oculta');
+  } else {
+    capaRemesas.addTo(map);
+    capaVisible = true;
+    btn.classList.add('active');
+    showToast('🗂️ Capa de remesas visible');
+  }
+}
+
+// ========== INICIALIZACIÓN ==========
 document.addEventListener("DOMContentLoaded", () => {
   map = L.map('map', { zoomControl: false, center: [-28.4689, -65.7792], zoom: 15, preferCanvas: true });
 
@@ -579,6 +707,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('btn-layer-street').classList.remove('active');
   });
   document.getElementById('btn-layer-street').classList.add('active');
+
+  document.getElementById('btn-layer-remesas').addEventListener('click', toggleCapaRemesas);
 
   grisLayer.on('tileload', () => document.getElementById('map-spinner').style.display = 'none');
   grisLayer.on('tileerror', () => { document.getElementById('map-spinner').style.display = 'none'; });
@@ -633,6 +763,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadFullState();
   setTimeout(initGPS, 500);
   setTimeout(checkSharedFile, 800);
+  setTimeout(cargarCapaRemesas, 400);
 });
 
 function toggleCompletados() {
@@ -1277,7 +1408,6 @@ function navigateDirectly(lat, lon) {
   window.open(`https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${lat},${lon}&dir_action=navigate`, '_blank');
 }
 
-// FIX v1.6.5: al completar, el foco va a la #1 del orden óptimo.
 async function changeTaskStatus(newStatus) {
   if (activeTaskIndex < 0 || activeTaskIndex >= tasks.length) return;
   const t = tasks[activeTaskIndex];
@@ -1289,9 +1419,7 @@ async function changeTaskStatus(newStatus) {
     activeTaskIndex = -1; orden = [];
     renderTasks(); updateNavigation(); updateTotalCounter(); return;
   }
-  // Reordenar con las activas restantes. Al terminar, orden[0] es la próxima tarea óptima.
   await reorderTasks();
-  // Poner el foco en la #1 del nuevo orden (la que sugiere la cabecera).
   if (orden.length > 0) activeTaskIndex = orden[0];
   renderTasks(); updateNavigation(); updateTotalCounter();
 }
@@ -1326,7 +1454,6 @@ function updateNavigation() {
   document.getElementById('hud-panel').style.display = tasks.length ? 'flex' : 'none';
   const actionsContainer = document.getElementById('btn-actions-container');
 
-  // FIX v1.6.5: si el foco se perdió, apuntar a la #1 del orden óptimo.
   if (activeTaskIndex === -1 || activeTaskIndex >= tasks.length || !tasks[activeTaskIndex]) {
     if (orden.length > 0) activeTaskIndex = orden[0];
     else if (activas.length > 0) activeTaskIndex = tasks.indexOf(activas[0]);

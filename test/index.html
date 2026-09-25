@@ -8,28 +8,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-const APP_VERSION = "v1.6.6-test";
+const APP_VERSION = "v1.6.7-test";
 console.log(`🚀 GIOT - TEST - Gestor Inteligente - EC SAPEM - ${APP_VERSION}`);
-
-if (window.location.protocol !== 'file:') {
-  const manifest = {
-    name: "GIOT - TEST - Gestor Inteligente - EC SAPEM",
-    short_name: "GIOT TEST",
-    description: "GIOT entorno de pruebas (no usar en producción)",
-    start_url: ".", scope: ".", display: "standalone",
-    background_color: "#0b0d13", theme_color: "#8b5cf6",
-    icons: [{
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%238b5cf6'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='%230b0d13' font-family='Arial'%3E⚡%3C/text%3E%3C/svg%3E",
-      sizes: "100x100", type: "image/svg+xml", purpose: "any"
-    }],
-    share_target: {
-      action: "./share-target", method: "POST", enctype: "multipart/form-data",
-      params: { files: [{ name: "file", accept: [".txt",".csv",".gpx",".xlsx",".xls","text/plain","text/csv","application/gpx+xml"] }] }
-    }
-  };
-  const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-  document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${URL.createObjectURL(blob)}">`);
-}
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
@@ -354,7 +334,7 @@ header {
         📋 <span id="totalCount">0</span>
     </button>
     <div id="calculating-indicator">⏳ Calculando ruta óptima...</div>
-    <div id="credits">Contacto: Jorge Guzman - 3834 602667 | <span class="version">Versión: <span id="version-display">v1.6.6-test</span></span></div>
+    <div id="credits">Contacto: Jorge Guzman - 3834 602667 | <span class="version">Versión: <span id="version-display">v1.6.7-test</span></span></div>
     <div id="empty-state">
       <div style="font-size:36px;">🗺️</div>
       <p>Cargá tu archivo con las Órdenes de Trabajo o Lecturas.<br>Los puntos se mostrarán en el mapa con numeración.</p>
@@ -443,16 +423,15 @@ const KEY_SHARED     = 'shared-files-test';
 const SW_TILE_PREFIX = 'giot-test-tiles-';
 const KML_URL = './capas/remesas.kml';
 
-// Colores por Remesa
 const REMESA_COLORS = {
-  1: '#e74c3c', // rojo
-  2: '#e67e22', // naranja
-  3: '#f1c40f', // amarillo
-  4: '#27ae60', // verde
-  5: '#3498db', // celeste
-  6: '#9b59b6', // púrpura
-  7: '#e91e63', // rosa
-  8: '#1abc9c'  // turquesa
+  1: '#e74c3c',
+  2: '#e67e22',
+  3: '#f1c40f',
+  4: '#27ae60',
+  5: '#3498db',
+  6: '#9b59b6',
+  7: '#e91e63',
+  8: '#1abc9c'
 };
 const REMESA_COLOR_DEFAULT = '#95a5a6';
 
@@ -575,7 +554,6 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
 
 // ====== CARGA DE LA CAPA DE REMESAS ======
 function parseKmlCoordinates(str) {
-  // KML: "lon,lat,alt lon,lat,alt ..." separadas por espacios
   const pairs = str.trim().split(/\s+/);
   const coords = [];
   for (const p of pairs) {
@@ -589,44 +567,29 @@ function parseKmlCoordinates(str) {
 }
 
 function detectarRemesa(nombreCarpeta) {
-  // Acepta "Remesa N", "Renesa N" (typo), "Remesa N prop", etc.
   const m = nombreCarpeta.match(/re[mn]esa\s+(\d+)/i);
   return m ? parseInt(m[1]) : null;
 }
 
-function procesarCarpetaKml(folderEl, remesaPadre) {
-  const nameEl = folderEl.querySelector(':scope > name');
-  const folderName = nameEl ? nameEl.textContent.trim() : '';
-  const remesaDetectada = detectarRemesa(folderName);
-  const remesaActual = remesaDetectada !== null ? remesaDetectada : remesaPadre;
-
-  // Procesar Placemarks directos de esta carpeta
-  const placemarks = folderEl.querySelectorAll(':scope > Placemark');
-  placemarks.forEach(pm => {
-    const polyEl = pm.querySelector('Polygon');
-    if (!polyEl) return; // Ignoramos Points, LineStrings, etc.
-    const coordsEl = polyEl.querySelector('outerBoundaryIs coordinates') || polyEl.querySelector('coordinates');
-    if (!coordsEl) return;
-    const coords = parseKmlCoordinates(coordsEl.textContent);
-    if (coords.length < 3) return;
-    const rutaName = pm.querySelector(':scope > name')?.textContent || '';
-    const remesa = remesaActual || 0;
-    const color = REMESA_COLORS[remesa] || REMESA_COLOR_DEFAULT;
-    const polygon = L.polygon(coords, {
-      color: color,
-      weight: 2,
-      opacity: 0.85,
-      fillColor: color,
-      fillOpacity: 0.06,
-      interactive: true
-    });
-    polygon.bindPopup(`<div class="popup-nav-title">Ruta ${rutaName}</div><div class="popup-nav-text">Remesa ${remesa || '?'}</div>`, { maxWidth: 200 });
-    capaRemesas.addLayer(polygon);
-  });
-
-  // Procesar subcarpetas recursivamente
-  const subfolders = folderEl.querySelectorAll(':scope > Folder');
-  subfolders.forEach(sf => procesarCarpetaKml(sf, remesaActual));
+// Busca la Remesa subiendo por los ancestros del Placemark (Folder/Document) hasta encontrar un name con "Remesa N"
+function detectarRemesaDeAncestros(placemarkEl) {
+  let cur = placemarkEl.parentElement;
+  while (cur) {
+    const tag = cur.tagName;
+    if (tag === 'Folder' || tag === 'Document') {
+      // Buscar el <name> hijo directo
+      const children = cur.children;
+      for (let i = 0; i < children.length; i++) {
+        if (children[i].tagName === 'name') {
+          const r = detectarRemesa(children[i].textContent.trim());
+          if (r !== null) return r;
+          break;
+        }
+      }
+    }
+    cur = cur.parentElement;
+  }
+  return null;
 }
 
 async function cargarCapaRemesas() {
@@ -647,15 +610,39 @@ async function cargarCapaRemesas() {
       document.getElementById('btn-layer-remesas').classList.remove('active');
       return;
     }
-    const doc = xml.documentElement;
-    procesarCarpetaKml(doc, null);
+    // Recorremos TODOS los Placemark del documento
+    const placemarks = xml.getElementsByTagName('Placemark');
+    console.log('KML: Placemarks encontrados:', placemarks.length);
+    let countPoly = 0;
+    for (let i = 0; i < placemarks.length; i++) {
+      const pm = placemarks[i];
+      const polyEl = pm.getElementsByTagName('Polygon')[0];
+      if (!polyEl) continue;
+      const coordsEl = polyEl.getElementsByTagName('coordinates')[0];
+      if (!coordsEl) continue;
+      const coords = parseKmlCoordinates(coordsEl.textContent);
+      if (coords.length < 3) continue;
+      const nameEl = pm.getElementsByTagName('name')[0];
+      const rutaName = nameEl ? nameEl.textContent.trim() : '';
+      const remesa = detectarRemesaDeAncestros(pm) || 0;
+      const color = REMESA_COLORS[remesa] || REMESA_COLOR_DEFAULT;
+      const polygon = L.polygon(coords, {
+        color: color,
+        weight: 2,
+        opacity: 0.85,
+        fillColor: color,
+        fillOpacity: 0.06,
+        interactive: true
+      });
+      polygon.bindPopup(`<div class="popup-nav-title">Ruta ${rutaName}</div><div class="popup-nav-text">Remesa ${remesa || '?'}</div>`, { maxWidth: 200 });
+      capaRemesas.addLayer(polygon);
+      countPoly++;
+    }
     capaCargada = true;
-    // Agregar al mapa (por debajo de los marcadores)
     capaRemesas.addTo(map);
     capaVisible = true;
     document.getElementById('btn-layer-remesas').classList.add('active');
-    const n = capaRemesas.getLayers().length;
-    console.log('Capa de remesas cargada:', n, 'polígonos');
+    console.log('Capa de remesas cargada:', countPoly, 'polígonos');
   } catch (e) {
     console.warn('Error cargando capa de remesas:', e);
     capaCargada = false;
